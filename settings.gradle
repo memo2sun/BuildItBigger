@@ -1,0 +1,3 @@
+include ':mylibrary'
+include ':javaJokes'
+include ':app', ':backend'

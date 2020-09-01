@@ -1,0 +1,121 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.cloud.tools.endpoints-framework-client'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.google.cloud.tools:endpoints-framework-gradle-plugin:2.0.1'
+    }
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+
+    defaultConfig {
+        applicationId "com.udacity.gradle.builditbigger"
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled true
+
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    configurations {
+        all {
+            exclude module: 'httpclient'
+            exclude module: 'commons-logging'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        free {
+            dimension "version"
+            applicationId "com.udacity.gradle.builditbigger.free"
+            buildConfigField "boolean", "PAID_VERSION", "false"
+        }
+        paid {
+            dimension "version"
+            applicationId "com.udacity.gradle.builditbigger.paid"
+            buildConfigField "boolean", "PAID_VERSION", "true"
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    endpointsServer project(path: ':backend', configuration: 'endpoints')
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.gms:play-services-ads:19.3.0'
+    implementation 'com.google.api-client:google-api-client:1.25.0'
+    implementation 'com.google.http-client:google-http-client-android:1.23.0'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation project(':javaJokes')
+    implementation project(':mylibrary')
+
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    implementation 'androidx.test.espresso:espresso-idling-resource:3.3.0'
+    androidTestImplementation 'androidx.test:rules:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+
+    testImplementation 'junit:junit:4.12'
+}
+
+task startGCEServer {
+    dependsOn ":backend:appengineStart"
+    description "Launches the GCE local development server"
+    group "integration test"
+    doLast {
+        println "start server"
+    }
+}
+
+task shutdownGCEServer {
+    dependsOn ":backend:appengineStop"
+    description "Shuts down the server"
+    group "integration test"
+    doLast {
+        println "stop server"
+    }
+}
+
+task runAndroidTest {
+    dependsOn ":app:connectedFreeDebugAndroidTest"
+    description "Async task test if successfully retrieving a non-empty string"
+    group "integration test"
+    doLast {
+        println "android test"
+    }
+}
+
+task runIntegrationTest {
+    dependsOn = ["startGCEServer", "shutdownGCEServer", "runAndroidTest"]
+    tasks.findByName("runAndroidTest").mustRunAfter "startGCEServer"
+    tasks.findByName("shutdownGCEServer").mustRunAfter "runAndroidTest"
+    description "run all three tasks together"
+    group "integration test"
+    doLast {
+        println "integration test done"
+    }
+}
