@@ -215,11 +215,13 @@ public class MainActivity extends AppCompatActivity implements EndpointsAsyncTas
     @Override
     protected void onResume() {
         super.onResume();
-        if (mInterstitialAd != null && mInterstitialAd.isLoaded()) {
-            Log.d(TAG, "ad is loaded");
-        } else {
-            Log.d(TAG, "ad is not loaded");
-            loadInterstitialAd();
+        if (!BuildConfig.PAID_VERSION) {
+            if (mInterstitialAd != null && mInterstitialAd.isLoaded()) {
+                Log.d(TAG, "ad is loaded");
+            } else {
+                Log.d(TAG, "ad is not loaded");
+                loadInterstitialAd();
+            }
         }
     }
 
